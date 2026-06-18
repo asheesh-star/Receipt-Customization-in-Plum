@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Receipt Designer v0.6.1</title>
+
+<style>
+/* ================= THEME ================= */
+:root{
+ --blue:#2563eb;
+ --bg:#f3f6fb;
+ --panel:#ffffff;
+ --border:#e3e7ee;
+ --dark:#0f172a;
+}
+
+body{
+ margin:0;
+ font-family:Inter, Arial, sans-serif;
+ background:var(--bg);
+ overflow: hidden;
+}
+
+/* ================= HEADER ================= */
+.header{
+ height:56px;
+ background:#ffffff;
+ display:flex;
+ align-items:center;
+ padding:0 20px;
+ border-bottom:1px solid var(--border);
+ font-weight:600;
+ position: relative;
+ z-index: 10;
+}
+
+/* ================= LAYOUT ================= */
+.app{
+ display:grid;
+ grid-template-columns:300px 1fr 400px;
+ height:calc(100vh - 56px);
+ width: 100vw;
+}
+
+/* ================= LEFT ================= */
+.sidebar{
+ background:linear-gradient(180deg,#0f172a,#020617);
+ color:#cbd5f5;
+ padding:20px;
+ overflow-y: auto;
+}
+
+.sidebar h4{
+ font-size:12px;
+ letter-spacing:.08em;
+ color:#64748b;
+ margin-bottom:12px;
+ text-transform: uppercase;
+}
+
+.navbtn{
+ padding:12px 16px;
+ border-radius:8px;
+ cursor:pointer;
+ margin-bottom:8px;
+ display: flex;
+ align-items: center;
+ transition: background 0.2s;
+}
+
+.navbtn.active{
+ background:#2563eb;
+ color:#fff;
+}
+
+/* ================= CENTER ================= */
+.center{
+ padding:40px;
+ display:flex;
+ justify-content:center;
+ overflow-y:auto;
+ background: #e2e8f0;
+}
+
+.receiptWrap{
+ background:#fff;
+ padding:24px;
+ border-radius:12px;
+ box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+ width:340px;
+ height: fit-content;
+}
+
+.block{
+ margin-bottom:8px;
+ font-family:monospace;
+ position: relative;
+}
+
+.block.selected{
+ outline:2px solid var(--blue);
+ background:#eff6ff;
+}
+
+.hr{
+ border-top:1px dashed #ccc;
+ margin:12px 0;
+}
+
+.centerTxt{text-align:center;}
+.leftTxt{text-align:left;}
+.rightTxt{text-align:right;}
+
+/* ITEMS + TOTALS */
+.row{
+ display:grid;
+ grid-template-columns:1fr 80px;
+ gap:10px;
+}
+.row span:last-child{text-align:right;}
+.mod{padding-left:16px;}
+
+/* BARCODE & QR */
+.barcode{
+ height:42px;
+ background:repeating-linear-gradient(90deg,#000,#000 2px,#fff 2px,#fff 4px);
+ margin:8px 0;
+}
+
+.qr{
+ width:120px;
+ height:120px;
+ border:1px solid #000;
+ margin:8px auto;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ font-weight: bold;
+}
+
+/* ================= RIGHT ================= */
+.right{
+ background:#f8fafc;
+ padding:24px;
+ overflow-y:auto;
+ border-left: 1px solid var(--border);
+}
+
+.card{
+ background:#fff;
+ border-radius:16px;
+ padding:24px;
+ box-shadow:0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+label{
+ font-size:12px;
+ font-weight:700;
+ display:block;
+ margin-top:20px;
+ color: #64748b;
+ text-transform: uppercase;
+ letter-spacing: 0.05em;
+}
+
+textarea,input,select{
+ width:100%;
+ padding:10px;
+ margin-top:8px;
+ border-radius:8px;
+ border:1px solid var(--border);
+ box-sizing: border-box;
+ font-family: inherit;
+}
+
+.grid2{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:10px;
+ margin-top:10px;
+}
+
+.btn{
+ padding:10px;
+ border-radius:8px;
+ border:1px solid var(--border);
+ background:#fff;
+ cursor:pointer;
+ font-weight: 600;
+ font-size: 13px;
+ transition: all 0.2s;
+}
+
+.align{
+ display:grid;
+ grid-template-columns:repeat(3,1fr);
+ gap:10px;
+ margin-top:10px;
+}
+
+.toggleRow{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ margin-top:20px;
+ padding-top: 20px;
+ border-top: 1px solid var(--border);
+}
+
+.switch{
+ width:42px;height:22px;position:relative;
+}
+.switch input{opacity:0;}
+.slider{
+ position:absolute;inset:0;background:#ccc;border-radius:20px;cursor: pointer;
+}
+.slider:before{
+ content:"";width:18px;height:18px;background:#fff;
+ position:absolute;left:2px;top:2px;border-radius:50%;
+ transition:.2s;
+}
+.switch input:checked + .slider{
+ background:#22c55e;
+}
+.switch input:checked + .slider:before{
+ transform:translateX(20px);
+}
+
+/* ================= INFO PANEL STYLES ================= */
+.info-container { margin-top: 15px; }
+.info-card {
+    background: #fffdf0;
+    border: 1px solid #fde68a;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+.info-header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 8px; }
+.info-icon {
+    background: #fef3c7;
+    padding: 8px;
+    border-radius: 50%;
+    font-size: 16px;
+    line-height: 1;
+}
+.info-title-group .title { color: #92400e; font-weight: 700; font-size: 15px; margin: 0; }
+.info-title-group .subtitle { color: #b45309; font-size: 12px; margin: 2px 0 0 0; }
+.info-body { color: #92400e; font-size: 13px; line-height: 1.5; margin-top: 8px; }
+
+.bullet-list {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0;
+    margin: 0 0 16px 0;
+    list-style: none;
+}
+.bullet-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    color: #334155;
+    display: flex;
+    align-items: center;
+}
+.bullet-item:last-child { border-bottom: none; }
+.bullet-dot { color: #be185d; margin-right: 12px; font-size: 18px; }
+
+.settings-note {
+    background: #fdf2f8;
+    border: 1px solid #fbcfe8;
+    border-radius: 12px;
+    padding: 16px;
+    font-size: 13px;
+    color: #831843;
+    line-height: 1.5;
+}
+.settings-note b { color: #831843; font-weight: 700; }
+
+</style>
+</head>
+
+<body>
+
+<div class="header">Receipt Designer <span style="color:#64748b;margin-left:10px">v0.6.1</span></div>
+
+<div class="app">
+
+<div class="sidebar">
+    <h4>LAYOUT BLOCKS</h4>
+    <div class="navbtn active" draggable="true" onclick="selectBlock('store',this)"><span style="margin-right:12px;cursor:grab;opacity:0.5">≡</span>Store Header</div>
+    <div class="navbtn" draggable="true" onclick="selectBlock('order',this)"><span style="margin-right:12px;cursor:grab;opacity:0.5">≡</span>Order Info</div>
+    <div class="navbtn" draggable="true" onclick="selectBlock('call',this)"><span style="margin-right:12px;cursor:grab;opacity:0.5">≡</span>Call Number</div>
+    <div class="navbtn" draggable="true" onclick="selectBlock('items',this)"><span style="margin-right:12px;cursor:grab;opacity:0.5">≡</span>Check Items</div>
+    <div class="navbtn" draggable="true" onclick="selectBlock('totals',this)"><span style="margin-right:12px;cursor:grab;opacity:0.5">≡</span>Payment Summary</div>
+    <div class="navbtn" draggable="true" onclick="selectBlock('footer',this)"><span style="margin-right:12px;cursor:grab;opacity:0.5">≡</span>Footer</div>
+    <div class="navbtn" draggable="true" onclick="selectBlock('barcode',this)"><span style="margin-right:12px;cursor:grab;opacity:0.5">≡</span>Barcode</div>
+    <div class="navbtn" draggable="true" onclick="selectBlock('loyalty',this)"><span style="margin-right:12px;cursor:grab;opacity:0.5">≡</span>Loyalty Message</div>
+    <div class="navbtn" draggable="true" onclick="selectBlock('qr',this)"><span style="margin-right:12px;cursor:grab;opacity:0.5">≡</span>QR Code</div>
+</div>
+
+<div class="center">
+    <div class="receiptWrap">
+        <div id="store" class="block centerTxt" contenteditable>
+            <b id="storeTop">
+                <span id="brandSpan">Bojangles</span><br>
+                <span id="storeIdSpan">003372</span><br>
+                <span id="storeNameSpan">Riverside Office</span>
+            </b><br>
+            595 Gregory Poole Lane<br>
+            Mebane, NC 27302<br>
+            919-563-0143
+        </div>
+        <div class="hr"></div>
+        <div id="order" class="block" contenteditable>
+            01-23-26 11:58 am<br>
+            jonathan z (39) ref#: c76001<br>
+            check #1 (quick sale visa)
+        </div>
+        <div class="hr"></div>
+        <div id="call" class="block centerTxt" contenteditable>
+            CALL NUM#: 26
+        </div>
+        <div class="hr"></div>
+        <div id="items" class="block">
+            <div class="row"><span>1 Bo 2 #1 Caj Bisc Meal</span><span>8.68</span></div>
+            <div class="row"><span>Large Drink</span><span>0.00</span></div>
+            <div class="row mod"><span>Large Mtn Dew</span><span>0.00</span></div>
+            <div class="row"><span>Reg Fixins</span><span>0.00</span></div>
+            <div class="row mod"><span>Bo Rounds</span><span>0.00</span></div>
+            <div class="row mod"><span>Macaroni & Cheese</span><span>0.00</span></div>
+            <div class="row"><span>1 Butter Biscuit</span><span>1.39</span></div>
+        </div>
+        <div class="hr"></div>
+        <div id="totals" class="block">
+            <div class="row"><span>Sub Total</span><span>28.23</span></div>
+            <div class="row"><span>Default</span><span>0.00</span></div>
+            <div class="row"><span>Sales</span><span>2.26</span></div>
+            <div class="row"><span>Total</span><span>30.49</span></div>
+            <div class="row"><span>VISA, *4373</span><span>30.49</span></div>
+            <div class="row"><span>Tip</span><span>5.49</span></div>
+            <div class="row"><span><b>Total</b></span><span><b>35.98</b></span></div>
+            <br>
+            <div class="row"><span>Change</span><span>0.00</span></div>
+        </div>
+        <div class="hr"></div>
+        <div id="footer" class="block centerTxt" contenteditable>
+            Have a really nice day.<br>
+            Powered by PlumPOS
+        </div>
+        <div class="hr"></div>
+        <div id="barcode" class="block centerTxt">
+            <div class="barcode"></div>
+            *C50E1B6C*
+        </div>
+        <div id="loyalty" class="block centerTxt" contenteditable>
+            Join James Diner Loyalty Today!
+        </div>
+        <div id="qr" class="block centerTxt">
+            <div class="qr">QR</div>
+            <div id="qrLabel">Scan for Feedback</div>
+        </div>
+    </div>
+</div>
+
+<div class="right">
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h3 id="propTitle" style="margin:0; border-bottom:3px solid #2563eb; padding-bottom:4px; font-size: 18px;">PROPERTIES</h3>
+            <span id="propTag" style="background:#fce7f3; color:#9d174d; padding:2px 10px; border-radius:12px; font-size:11px; font-weight:700; display:none;"></span>
+        </div>
+
+        <div id="infoItems" class="info-container" style="display:none;">
+            <div class="info-card">
+                <div class="info-header">
+                    <div class="info-icon">🔒</div>
+                    <div class="info-title-group">
+                        <p class="title">Check Items</p>
+                        <p class="subtitle">Display only — no editing</p>
+                    </div>
+                </div>
+                <div class="info-body">Ordered items are pulled live from your POS transaction. Each line, modifier, and price is generated automatically at the time of sale.</div>
+            </div>
+            <ul class="bullet-list">
+                <li class="bullet-item"><span class="bullet-dot">•</span> Item name & quantity</li>
+                <li class="bullet-item"><span class="bullet-dot">•</span> Modifiers / add-ons</li>
+                <li class="bullet-item"><span class="bullet-dot">•</span> Per-item price</li>
+                <li class="bullet-item"><span class="bullet-dot">•</span> Indented sub-items</li>
+            </ul>
+            <div class="settings-note">
+                💡 To change what appears here, update your menu and pricing in <b>Plum POS Settings</b>.
+            </div>
+        </div>
+
+        <div id="infoTotals" class="info-container" style="display:none;">
+            <div class="info-card">
+                <div class="info-header">
+                    <div class="info-icon">🔒</div>
+                    <div class="info-title-group">
+                        <p class="title">Payment Summary</p>
+                        <p class="subtitle">Display only — no editing</p>
+                    </div>
+                </div>
+                <div class="info-body">The full payment breakdown is calculated by your POS, including taxes, tips, and the final charged amount.</div>
+            </div>
+            <ul class="bullet-list">
+                <li class="bullet-item"><span class="bullet-dot">•</span> Sub Total</li>
+                <li class="bullet-item"><span class="bullet-dot">•</span> Tax & fees</li>
+                <li class="bullet-item"><span class="bullet-dot">•</span> Tip amount</li>
+                <li class="bullet-item"><span class="bullet-dot">•</span> Payment method</li>
+                <li class="bullet-item"><span class="bullet-dot">•</span> Grand Total & Change</li>
+            </ul>
+            <div class="settings-note">
+                💡 To change what appears here, update your menu and pricing in <b>Plum POS Settings</b>.
+            </div>
+        </div>
+
+        <div id="storeConfig">
+            <label>Display Format</label>
+            <select id="storeFormat" onchange="renderStore()">
+                <option value="SN">Store Name</option>
+                <option value="ID_SN">Store ID + Store Name</option>
+                <option value="BN_ID">Brand + Store ID</option>
+                <option value="BN_ID_SN">Brand + Store ID + Store Name</option>
+            </select>
+        </div>
+
+        <div id="qrConfig" style="display:none">
+            <label>QR URL</label>
+            <input id="qrUrl" placeholder="https://example.com">
+            <label>Label</label>
+            <input id="qrLabelInput" value="Scan for Feedback" oninput="updateQR()">
+        </div>
+
+        <div id="textEditorWrap">
+            <label>Text Content</label>
+            <textarea id="textEditor" rows="5" oninput="updateText(this.value)"></textarea>
+        </div>
+
+        <div id="formattingContainer">
+            <label>Formatting</label>
+            <div class="grid2">
+                <button class="btn" onclick="cmd('bold')">Bold</button>
+                <button class="btn" onclick="normalFormat()">Standard</button>
+                <button class="btn" onclick="increaseFont()">Text +</button>
+                <button class="btn" onclick="decreaseFont()">Text -</button>
+                <button class="btn" onclick="toggleCaps()">UPPER</button>
+                <button class="btn" onclick="applyCamel()">Title Case</button>
+                <button class="btn" onclick="applyBlackBg()">Invert BG</button>
+                <button class="btn" onclick="removeBg()">Clear Style</button>
+            </div>
+            <label>Alignment</label>
+            <div class="align">
+                <button class="btn" onclick="align('left')">Left</button>
+                <button class="btn" onclick="align('center')">Center</button>
+                <button class="btn" onclick="align('right')">Right</button>
+            </div>
+        </div>
+
+        <div id="visibilitySection" class="toggleRow">
+            <span style="font-weight: 600; color: #475569; font-size: 14px;">Block Visibility</span>
+            <label class="switch">
+                <input type="checkbox" id="visToggle" checked onchange="toggleVis(this.checked)">
+                <span class="slider"></span>
+            </label>
+        </div>
+    </div>
+</div>
+
+</div>
+
+<script>
+let active=null;
+let caps=false;
+
+function selectBlock(id,btn){
+ document.querySelectorAll(".navbtn").forEach(b=>b.classList.remove("active"));
+ btn.classList.add("active");
+
+ if(active) active.classList.remove("selected");
+ active=document.getElementById(id);
+ active.classList.add("selected");
+
+ propTitle.innerText=btn.textContent.replace('≡','').trim().toUpperCase();
+ 
+ const isItems = (id === "items");
+ const isTotals = (id === "totals");
+
+ // Show/Hide Info Screens
+ infoItems.style.display = isItems ? "block" : "none";
+ infoTotals.style.display = isTotals ? "block" : "none";
+ propTag.innerText = id;
+ propTag.style.display = (isItems || isTotals) ? "block" : "none";
+
+ // REMOVED Block Visibility toggle for Items and Totals only
+ visibilitySection.style.display = (isItems || isTotals) ? "none" : "flex";
+
+ // Visibility for other panels
+ storeConfig.style.display = (id === "store") ? "block" : "none";
+ qrConfig.style.display = (id === "qr") ? "block" : "none";
+ textEditorWrap.style.display = (id === "store" || isItems || isTotals || id === "order") ? "none" : "block";
+ formattingContainer.style.display = (isItems || isTotals) ? "none" : "block";
+
+ if(textEditorWrap.style.display !== "none") textEditor.value = active.innerText;
+ visToggle.checked = (active.style.display !== 'none');
+}
+
+function updateText(v){ if(active) active.innerText=v; }
+function toggleVis(v){ active.style.display=v?"block":"none"; }
+function align(a){ 
+    active.classList.remove("leftTxt","centerTxt","rightTxt");
+    active.classList.add(a+"Txt"); 
+}
+
+function cmd(t){
+ active.focus();
+ let sel=window.getSelection();
+ if(sel.toString()===""){
+   let r=document.createRange();
+   r.selectNodeContents(active);
+   sel.removeAllRanges();
+   sel.addRange(r);
+ }
+ document.execCommand(t,false,null);
+}
+
+function toggleCaps(){
+ caps=!caps;
+ active.innerText=caps?active.innerText.toUpperCase():active.innerText.toLowerCase();
+}
+
+function applyBlackBg(){ active.style.background="#000"; active.style.color="#fff"; }
+
+function renderStore(){
+ const b=brandSpan.innerText;
+ const s=storeNameSpan.innerText;
+ const i=storeIdSpan.innerText;
+ const f=storeFormat.value;
+ let arr=[];
+ if(f==="SN")arr=[s];
+ if(f==="ID_SN")arr=[i,s];
+ if(f==="BN_ID")arr=[b,i];
+ if(f==="BN_ID_SN")arr=[b,i,s];
+ storeTop.innerHTML=arr.join("<br>");
+}
+
+function updateQR(){ qrLabel.innerText=qrLabelInput.value; }
+function applyCamel(){ if(active) active.innerText = active.innerText.toLowerCase().replace(/\b\w/g, l => l.toUpperCase()); }
+function removeBg(){ if(active){ active.style.background = ""; active.style.color = ""; } }
+
+let draggedBtn=null;
+document.querySelectorAll('.navbtn').forEach(btn=>{
+ btn.addEventListener('dragstart',()=>{ draggedBtn=btn; });
+ btn.addEventListener('dragover',e=>e.preventDefault());
+ btn.addEventListener('drop',()=>{
+   if(draggedBtn && draggedBtn!==btn){
+     btn.parentNode.insertBefore(draggedBtn, btn);
+     const draggedId=draggedBtn.getAttribute('onclick').match(/'(.*?)'/)[1];
+     const targetId=btn.getAttribute('onclick').match(/'(.*?)'/)[1];
+     const draggedEl=document.getElementById(draggedId);
+     const targetEl=document.getElementById(targetId);
+     targetEl.parentNode.insertBefore(draggedEl, targetEl);
+   }
+ });
+});
+
+function increaseFont(){ if(active){ let size = window.getComputedStyle(active).fontSize; active.style.fontSize = (parseFloat(size) + 2) + "px"; } }
+function decreaseFont(){ if(active){ let size = window.getComputedStyle(active).fontSize; active.style.fontSize = (parseFloat(size) - 2) + "px"; } }
+function normalFormat(){ if(active){ active.focus(); document.execCommand("removeFormat", false, null); active.style.fontSize = ""; } }
+
+window.onload = () => selectBlock('store', document.querySelector('.navbtn.active'));
+</script>
+</body>
+</html>
